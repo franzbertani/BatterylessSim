@@ -324,9 +324,9 @@ private static final int COVERAGE_BUFFER_MEM = 0x82000;
         		if (((char)data) == '\n') {
         			        			
         			if (ekhofilename != null && printHandler == null) {
-        				printHandler = new PrintHandler(ekhofilename);
+        				printHandler = new PrintHandler(ekhofilename, registry);
         			} else if (printHandler == null) {
-        				printHandler = new PrintHandler();
+        				printHandler = new PrintHandler(registry);
         			}
         			
         			printHandler.handleCommand(serialText);

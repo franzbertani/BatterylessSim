@@ -1,18 +1,33 @@
 package se.sics.mspsim.util;
 
 import edu.clemson.eval.EvalLogger;
+import se.sics.mspsim.core.MSP430;
 
 public class PrintHandler {
 
 	private static final String GRAPH_EVENT = "GRAPH-EVENT";
 	private static final String PRINT = "PRINTF";
+	private static final String RESET = "RESET";
 	
 	private EvalLogger evallogger;
+	private ComponentRegistry registry;
+	private MSP430 cpu; 
 	
 	public PrintHandler() {}
 	
+	public PrintHandler(ComponentRegistry registry) {
+		this.registry = registry;
+		this.cpu = this.registry.getComponent(MSP430.class);
+	}
+	
 	public PrintHandler(String name) {
 		evallogger = EvalLogger.getInstance(name);
+	}
+	
+	public PrintHandler(String name, ComponentRegistry registry) {
+		evallogger = EvalLogger.getInstance(name);
+		this.registry = registry;
+		this.cpu = this.registry.getComponent(MSP430.class);
 	}
 
 	public void handleCommand (String fullcommand) {
@@ -33,6 +48,10 @@ public class PrintHandler {
 				break;
 			case PRINT:
 				System.out.println("printf: "+ command[1]);
+				break;
+			case RESET:
+				System.out.println("reset: "+ command[1]);
+				cpu.reset();
 				break;
 			default:
 				System.err.println("Command not recognized!");
