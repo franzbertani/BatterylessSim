@@ -1,31 +1,39 @@
 package se.sics.mspsim.util;
 
 import edu.clemson.eval.EvalLogger;
+import se.sics.mspsim.core.FramController;
 import se.sics.mspsim.core.MSP430;
+import se.sics.mspsim.core.Memory.AccessMode;
 
 public class PrintHandler {
 
 	private static final String GRAPH_EVENT = "GRAPH-EVENT";
 	private static final String PRINT = "PRINTF";
 	private static final String RESET = "RESET";
+	private static final String CHVAR = "CHVAR";
 	
 	private EvalLogger evallogger;
 	private ComponentRegistry registry;
+	private FramController fram; 
 	private MSP430 cpu; 
 	
 	public PrintHandler() {}
 	
-	public PrintHandler(ComponentRegistry registry) {
+	
+	public PrintHandler(ComponentRegistry registry, FramController fram) {
 		this.registry = registry;
+		this.fram = fram;
 		this.cpu = this.registry.getComponent(MSP430.class);
 	}
 	
-	public PrintHandler(String name) {
+	public PrintHandler(String name, FramController fram) {
 		evallogger = EvalLogger.getInstance(name);
+		this.fram = fram;
 	}
 	
-	public PrintHandler(String name, ComponentRegistry registry) {
+	public PrintHandler(String name, ComponentRegistry registry, FramController fram) {
 		evallogger = EvalLogger.getInstance(name);
+		this.fram = fram;
 		this.registry = registry;
 		this.cpu = this.registry.getComponent(MSP430.class);
 	}
@@ -52,6 +60,10 @@ public class PrintHandler {
 			case RESET:
 				System.out.println("reset: "+ command[1]);
 				cpu.reset();
+				break;
+			case CHVAR:
+				System.out.println("cambio valore variabile");
+				fram.framWrite(Integer.parseInt(command[1].split(" ")[1]),  800, AccessMode.WORD20);
 				break;
 			default:
 				System.err.println("Command not recognized!");
