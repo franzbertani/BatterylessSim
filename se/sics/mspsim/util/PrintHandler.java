@@ -10,12 +10,17 @@ public class PrintHandler {
 	private static final String GRAPH_EVENT = "GRAPH-EVENT";
 	private static final String PRINT = "PRINTF";
 	private static final String RESET = "RESET";
+	private static final String TEST_RESET = "TEST_RESET";
 	private static final String CHVAR = "CHVAR";
+	private static final int RESET_MEMORY_SIZE = 4;
+	private static final int MAX_OFF_MILLISEC = 10000;
+
 	
 	private EvalLogger evallogger;
 	private ComponentRegistry registry;
 	private FramController fram; 
 	private MSP430 cpu; 
+	private ResetManager resetManager;
 	
 	public PrintHandler() {}
 	
@@ -24,11 +29,15 @@ public class PrintHandler {
 		this.registry = registry;
 		this.fram = fram;
 		this.cpu = this.registry.getComponent(MSP430.class);
+		this.resetManager = new ResetManager(RESET_MEMORY_SIZE, MAX_OFF_MILLISEC, cpu);
+		this.resetManager.setFramController(fram);
 	}
 	
 	public PrintHandler(String name, FramController fram) {
 		evallogger = EvalLogger.getInstance(name);
 		this.fram = fram;
+		this.resetManager = new ResetManager(RESET_MEMORY_SIZE, MAX_OFF_MILLISEC, cpu);
+		this.resetManager.setFramController(fram);
 	}
 	
 	public PrintHandler(String name, ComponentRegistry registry, FramController fram) {
@@ -36,6 +45,8 @@ public class PrintHandler {
 		this.fram = fram;
 		this.registry = registry;
 		this.cpu = this.registry.getComponent(MSP430.class);
+		this.resetManager = new ResetManager(RESET_MEMORY_SIZE, MAX_OFF_MILLISEC, cpu);
+		this.resetManager.setFramController(fram);
 	}
 
 	public void handleCommand (String fullcommand) {
@@ -59,11 +70,22 @@ public class PrintHandler {
 				break;
 			case RESET:
 				System.out.println("reset: "+ command[1]);
-				cpu.reset();
+				resetManager.performReset();
 				break;
 			case CHVAR:
-				System.out.println("cambio valore variabile");
+				System.out.println("Set new value for variable");
 				fram.framWrite(Integer.parseInt(command[1].split(" ")[1]),  800, AccessMode.WORD20);
+				break;
+			case TEST_RESET:
+				System.out.println("Test reset for current task");
+				int offTime = resetManager.computeOffTime();
+				if(offTime == 0) {
+					System.out.println("No resets for current task");
+				} else {
+					resetManager.performReset();
+					resetManager.persistOffTime(Integer.parseInt(command[1].split(" ")[1]));
+				}
+				System.out.println(resetManager);
 				break;
 			default:
 				System.err.println("Command not recognized!");
