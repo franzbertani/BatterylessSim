@@ -2,6 +2,9 @@ package se.sics.mspsim.util;
 
 import java.util.Arrays;
 
+/**
+ * Circular array to store off times info.
+ */
 public class ResetsMemory {
 
     private int[] resetsArray;

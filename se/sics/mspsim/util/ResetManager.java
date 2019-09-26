@@ -7,6 +7,9 @@ import se.sics.mspsim.core.FramController;
 import se.sics.mspsim.core.MSP430;
 import se.sics.mspsim.core.Memory.AccessMode;
 
+/*
+ * Handles cpu resets and randomly compute off time.
+ */
 public class ResetManager{
     private ResetsMemory memory;
     private int maxOffTime;

@@ -11,7 +11,7 @@ public class PrintHandler {
 	private static final String PRINT = "PRINTF";
 	private static final String RESET = "RESET";
 	private static final String TEST_RESET = "TEST_RESET";
-	private static final String CHVAR = "CHVAR";
+	private static final String CHVAR = "CHVAR"; // set FRAM variable value.
 	private static final int RESET_MEMORY_SIZE = 4;
 	private static final int MAX_OFF_MILLISEC = 10000;
 
@@ -33,12 +33,14 @@ public class PrintHandler {
 		this.resetManager.setFramController(fram);
 	}
 	
+	/*
 	public PrintHandler(String name, FramController fram) {
 		evallogger = EvalLogger.getInstance(name);
 		this.fram = fram;
 		this.resetManager = new ResetManager(RESET_MEMORY_SIZE, MAX_OFF_MILLISEC, cpu);
 		this.resetManager.setFramController(fram);
 	}
+	*/
 	
 	public PrintHandler(String name, ComponentRegistry registry, FramController fram) {
 		evallogger = EvalLogger.getInstance(name);
@@ -74,7 +76,7 @@ public class PrintHandler {
 				break;
 			case CHVAR:
 				System.out.println("Set new value for variable");
-				fram.framWrite(Integer.parseInt(command[1].split(" ")[1]),  800, AccessMode.WORD20);
+				fram.framWrite(Integer.parseInt(command[1].split(" ")[1]),  800, AccessMode.WORD20); //TODO implement 
 				break;
 			case TEST_RESET:
 				System.out.println("Test reset for current task");
