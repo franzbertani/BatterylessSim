@@ -20,7 +20,7 @@ public class ResetManager{
 
     
     public ResetManager(int size, int maxOffTime, MSP430 cpu) {
-    	this.prob = 0.2;
+    	this.prob = 0.6;
     	this.memory = new ResetsMemory(size);
     	this.maxOffTime = maxOffTime;
     	this.rand = new Random();
