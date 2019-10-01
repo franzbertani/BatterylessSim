@@ -12,6 +12,8 @@ public class PrintHandler {
 	private static final String RESET = "RESET";
 	private static final String TEST_RESET = "TEST_RESET";
 	private static final String CHVAR = "CHVAR"; // set FRAM variable value.
+	private static final String START_TIME = "START_TIME";
+	private static final String GET_TIME = "GET_TIME";
 	private static final int RESET_MEMORY_SIZE = 4;
 	private static final int MAX_OFF_MILLISEC = 10000;
 
@@ -21,6 +23,7 @@ public class PrintHandler {
 	private FramController fram; 
 	private MSP430 cpu; 
 	private ResetManager resetManager;
+	private double time;
 	
 	public PrintHandler() {}
 	
@@ -31,6 +34,7 @@ public class PrintHandler {
 		this.cpu = this.registry.getComponent(MSP430.class);
 		this.resetManager = new ResetManager(RESET_MEMORY_SIZE, MAX_OFF_MILLISEC, cpu);
 		this.resetManager.setFramController(fram);
+		this.time = 0.0;
 	}
 	
 	/*
@@ -86,8 +90,16 @@ public class PrintHandler {
 				} else {
 					resetManager.performReset();
 					resetManager.persistOffTime(Integer.parseInt(command[1].split(" ")[1]));
+
 				}
-				System.out.println(resetManager);
+				break;
+			case START_TIME:
+				this.time = cpu.getTimeMillis();
+				break;
+			case GET_TIME:
+				double end_time = cpu.getTimeMillis();
+				int delta_time = (int) ((end_time - time) * 1000);
+				fram.framWrite(Integer.parseInt(command[1].split(" ")[1]), delta_time, AccessMode.WORD20);
 				break;
 			default:
 				System.err.println("Command not recognized!");
