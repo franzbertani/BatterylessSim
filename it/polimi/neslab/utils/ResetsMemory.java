@@ -1,4 +1,4 @@
-package se.sics.mspsim.util;
+package it.polimi.neslab.utils;
 
 import java.util.Arrays;
 

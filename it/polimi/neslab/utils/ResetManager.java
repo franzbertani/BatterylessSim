@@ -1,8 +1,8 @@
-package se.sics.mspsim.util;
+package it.polimi.neslab.utils;
 
 import java.util.Random;
 
-import se.sics.mspsim.util.ResetsMemory;
+import it.polimi.neslab.utils.ResetsMemory;
 import se.sics.mspsim.core.FramController;
 import se.sics.mspsim.core.MSP430;
 import se.sics.mspsim.core.Memory.AccessMode;
@@ -48,7 +48,14 @@ public class ResetManager{
     	if(fram == null) {
     		throw new UnsupportedOperationException("No fram controller, set it first.");
     	}
-		fram.framWrite(memoryLocation,  memory.getNewest(), AccessMode.WORD20);    	
+		fram.framWrite(memoryLocation,  memory.getNewest()*1000, AccessMode.WORD20);    	
+    }
+    
+    public void persistOffTime(int memoryLocation, int value) {
+    	if(fram == null) {
+    		throw new UnsupportedOperationException("No fram controller, set it first.");
+    	}
+		fram.framWrite(memoryLocation,  value, AccessMode.WORD20);    	
     }
     
     @Override
