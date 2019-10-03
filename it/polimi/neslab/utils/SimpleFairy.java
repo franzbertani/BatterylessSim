@@ -18,7 +18,9 @@ public class SimpleFairy {
     public SimpleFairy(String tracePath){
         this.traceValues = new ArrayList<Tuple>();
         String [] tupleValues = new String[2];
-
+        double offset = 0;
+        boolean firstLine = true;
+        
         Scanner lineScanner = null;
         try {
             lineScanner = new Scanner(new File(tracePath));
@@ -28,7 +30,11 @@ public class SimpleFairy {
         lineScanner.useDelimiter(System.getProperty("line.separator"));
         while (lineScanner.hasNext()){
             tupleValues = lineScanner.next().split("\t");
-            traceValues.add(new Tuple((Double.parseDouble(tupleValues[0])),(Double.parseDouble(tupleValues[1]))));
+            if(firstLine) {
+                offset = Double.parseDouble(tupleValues[0]);
+                firstLine = false;
+            }
+            traceValues.add(new Tuple((Double.parseDouble(tupleValues[0])-offset),(Double.parseDouble(tupleValues[1]))));
         }
         iter = traceValues.listIterator();
         current = iter.next();

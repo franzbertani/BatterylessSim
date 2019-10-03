@@ -1,6 +1,7 @@
 package se.sics.mspsim.util;
 
 import edu.clemson.eval.EvalLogger;
+import it.polimi.neslab.utils.ResetManager;
 import se.sics.mspsim.core.FramController;
 import se.sics.mspsim.core.MSP430;
 import se.sics.mspsim.core.Memory.AccessMode;
