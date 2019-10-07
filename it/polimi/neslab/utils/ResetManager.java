@@ -2,15 +2,19 @@ package it.polimi.neslab.utils;
 
 import java.util.Random;
 
+import edu.clemson.eval.EvalLogger;
 import it.polimi.neslab.utils.ResetsMemory;
 import se.sics.mspsim.core.FramController;
 import se.sics.mspsim.core.MSP430;
+import se.sics.mspsim.core.MSP430Constants;
+import se.sics.mspsim.core.StopExecutionException;
 import se.sics.mspsim.core.Memory.AccessMode;
+import se.sics.mspsim.util.Utils;
 
 /*
  * Handles cpu resets and randomly compute off time.
  */
-public class ResetManager{
+public class ResetManager implements MSP430Constants{
     private ResetsMemory memory;
     private int maxOffTime;
     private double prob;
@@ -62,5 +66,17 @@ public class ResetManager{
     public String toString() {
     	return memory.toString();
     }
+
+	public void stopExecution(String reason, int lifecycles) {
+		throw new StopExecutionException(cpu.readRegister(15),
+	              reason + " after " +
+	              lifecycles + " lifecycles; " +
+	              "R15=" + Utils.hex16(cpu.readRegister(15)) +
+	              "; PC=" + Utils.hex16(cpu.readRegister(PC)) +
+	              "; prev PC=" + Utils.hex16(cpu.getPreviousPC()) +
+	              "; SP=" + Utils.hex16(cpu.readRegister(SP))
+	              );
+		
+	}
     
 }

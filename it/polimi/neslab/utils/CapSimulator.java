@@ -17,6 +17,7 @@ public class CapSimulator {
 	private ResetManager resetManager;
 	private int memoryLocation;
 	private int frequency;
+	private int lifecycles;
 	private static double energyPerCC = 1e-9;
 	private static double voltageComparatorResolution = 0.001;
 
@@ -27,6 +28,7 @@ public class CapSimulator {
         this.voltage = initVoltage;
         this.millisecFraction = 0;
         this.vOff = 1.8;
+        this.lifecycles = 0;
     }
     
     public void setMemoryLocation (int memoryLocation) {
@@ -71,7 +73,7 @@ public class CapSimulator {
     	double vSupply = energyFairy.peekVoltage();
     	double resistance;
     	
-    	
+    	lifecycles++;
     	while (voltage <= onThreshold) {
     		if(vSupply < voltage) {
     			resistance = resistanceOff();
@@ -83,24 +85,41 @@ public class CapSimulator {
 	    	millisecFraction = 0;
 	    	time += (timeFraction * 1000000);
 	    	timeFraction = 0.001 - millisecFraction/1000000;
-	    	energyFairy.stepTrace();
+	    	if(!energyFairy.hasEnded()) {
+				energyFairy.stepTrace();
+			} else {
+				System.err.println("V trace ended");
+				resetManager.stopExecution("V trace ended", lifecycles);
+			}
 	    	vSupply = energyFairy.peekVoltage();
     	}
     	return (int) (time);
     }
     
-    public void checkIfPowersOffDuringExecution (int microseconds) {
+    public void checkIfPowersOffDuringExecution (double microseconds) {
     	double vSupply = energyFairy.peekVoltage();
-		int timeLeft = microseconds;
+		double timeLeft = microseconds;
 		double resistance;
 		int execCC;
 		double spentEnergy;
+		int iteration = 0;
 		
     	while (timeLeft > 0) {
+    		if(Math.floorMod(iteration, 100)==0) {
+    			System.out.println(iteration);
+    		}
+    		iteration++;
     		
     		if(millisecFraction == 1000) {
     			millisecFraction = 0;
-    			energyFairy.stepTrace();
+    			
+    			if(!energyFairy.hasEnded()) {
+    				energyFairy.stepTrace();
+    			} else {
+    				System.err.println("V trace ended");
+    				resetManager.stopExecution("V trace ended", lifecycles);
+    			}
+    			
     			vSupply = energyFairy.peekVoltage();
     		}
 
@@ -125,7 +144,8 @@ public class CapSimulator {
     		
     		millisecFraction += 1;
     		timeLeft -= 1;
-    	}	    	
+    	}
+    	System.out.println("No resets");
     }
     
     
@@ -137,10 +157,10 @@ public class CapSimulator {
     	c.setResetManager(rm);
     	c.frequency = msp.getDCOFrequency();
     	c.setOnThreshold(3.3);
-    	SimpleFairy sf = new SimpleFairy("/Users/francesco/git/BatterylessSim/traces/7.txt");
+    	SimpleFairy sf = new SimpleFairy("/Users/francesco/git/BatterylessSim/traces/1.txt");
     	c.setEnergyFairy(sf);
     	System.out.println(c.getMicrosecToVOn());
-    	c.checkIfPowersOffDuringExecution(8000000);
+    	c.checkIfPowersOffDuringExecution(8e6);
     	
     	
     }

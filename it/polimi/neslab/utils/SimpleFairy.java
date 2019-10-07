@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.util.ArrayList;
 import java.util.ListIterator;
+import java.util.NoSuchElementException;
 import java.util.Scanner;
 
 import se.sics.mspsim.util.Tuple;
@@ -49,11 +50,18 @@ public class SimpleFairy {
     public double peekVoltage() {
     	return current.getY();
     }
+    
+    public boolean hasEnded() {
+    	return iter.hasNext();
+    }
 
-    public void stepTrace() {
+    public void stepTrace() throws NoSuchElementException {
         current = next;
         if(iter.hasNext())
             next = iter.next();
+        else
+        	throw new NoSuchElementException();
+        	
     }
 
     public void fastForwardTo(double time){

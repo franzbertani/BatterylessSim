@@ -2765,4 +2765,8 @@ private static final int COVERAGE_BUFFER_MEM = 0x82000;
   public int getSmclkFrq() {
     return smclkFrq;
   }
+  
+  public int getPreviousPC() {
+	  return previousPC;
+  }
 }
