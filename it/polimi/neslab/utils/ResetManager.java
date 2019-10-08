@@ -16,6 +16,7 @@ import se.sics.mspsim.util.Utils;
  */
 public class ResetManager implements MSP430Constants{
     private ResetsMemory memory;
+    private int memoryLocation;
     private int maxOffTime;
     private double prob;
     private Random rand;
@@ -36,6 +37,10 @@ public class ResetManager implements MSP430Constants{
     	this.fram = fram;
     }
     
+    public void setMemoryLocation(int memoryLocation) {
+    	this.memoryLocation = memoryLocation;
+    }
+    
     public int computeOffTime() {
     	double seed = rand.nextDouble();
     	int geo = (int) Math.abs(Math.floor( Math.log( (seed/prob)*(1.0-prob) ) / Math.log(1.0-prob) ));
@@ -48,7 +53,7 @@ public class ResetManager implements MSP430Constants{
     	cpu.reset();
     }
     
-    public void persistOffTime(int memoryLocation) {
+    public void persistOffTime(int value) {
     	if(fram == null) {
     		throw new UnsupportedOperationException("No fram controller, set it first.");
     	}

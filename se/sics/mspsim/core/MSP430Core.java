@@ -184,6 +184,7 @@ private int printf_inner_function_calls = 0;
 private static final int PRINTF_BUFFER_MEM = 0x80000;
 String serialText = "";
 public String ekhofilename;
+private String voltageTrace;
 /* end non-invasive mspsim_printf code */
 
 /* start non-invasive main_start code */
@@ -322,7 +323,7 @@ private static final int COVERAGE_BUFFER_MEM = 0x82000;
         		//System.out.println("char = " + (char) data);
         		//System.out.println("current text = "  + serialText);
         		if (((char)data) == '\n') {
-        			        			
+        			        			        			
         			if (ekhofilename != null && printHandler == null) {
         				printHandler = new PrintHandler(ekhofilename, registry, fram);
         			} else if (printHandler == null) {
@@ -437,6 +438,14 @@ private static final int COVERAGE_BUFFER_MEM = 0x82000;
   
   public void setEkhoFilename (String filename) {
 	  this.ekhofilename = filename;
+  }
+  
+  public void setVoltageTrace (String filename) {
+	  this.voltageTrace = filename;
+  }
+  
+  public String getVoltageTrace () {
+	  return this.voltageTrace;
   }
 
   public void setIORange(int address, int range, IOUnit io) {

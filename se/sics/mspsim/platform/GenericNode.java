@@ -83,6 +83,7 @@ import se.sics.mspsim.util.Utils;
 import edu.clemson.ekho.Ekho;
 import edu.umass.energy.Capacitor;
 import edu.umass.energy.EnergyFairy;
+import it.polimi.neslab.utils.SimpleFairy;
 
 public abstract class GenericNode extends Chip implements Runnable {
  	
@@ -91,6 +92,7 @@ public abstract class GenericNode extends Chip implements Runnable {
   protected final MSP430 cpu;
   protected final ComponentRegistry registry;
   protected ConfigManager config;
+  private String voltageTrace;
 
   protected String firmwareFile = null;
   protected ELF elf;
@@ -154,6 +156,11 @@ public abstract class GenericNode extends Chip implements Runnable {
         }
       }
     }
+    
+    this.voltageTrace = config.getProperty("voltagetrace");
+    this.cpu.setVoltageTrace(voltageTrace);
+    this.cpu.getCapSimulator().setEnergyFairy(new SimpleFairy(voltageTrace));
+
 
     if (firmwareFile.endsWith("ihex")) {
       // IHEX Reading
@@ -551,5 +558,9 @@ public abstract class GenericNode extends Chip implements Runnable {
 
 	public String getFirmwareFileName () {
 		return firmwareFile;
+	}
+	
+	public String getVoltageTraceFilename() {
+		return voltageTrace;
 	}
 }

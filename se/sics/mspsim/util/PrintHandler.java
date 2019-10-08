@@ -1,7 +1,9 @@
 package se.sics.mspsim.util;
 
 import edu.clemson.eval.EvalLogger;
+import it.polimi.neslab.utils.CapSimulator;
 import it.polimi.neslab.utils.ResetManager;
+import it.polimi.neslab.utils.SimpleFairy;
 import se.sics.mspsim.core.FramController;
 import se.sics.mspsim.core.MSP430;
 import se.sics.mspsim.core.Memory.AccessMode;
@@ -15,15 +17,15 @@ public class PrintHandler {
 	private static final String CHVAR = "CHVAR"; // set FRAM variable value.
 	private static final String START_TIME = "START_TIME";
 	private static final String GET_TIME = "GET_TIME";
-	private static final int RESET_MEMORY_SIZE = 4;
-	private static final int MAX_OFF_MILLISEC = 10000;
-
+	private static final String TEST_EXECUTION = "TEST_EXECUTION";
+	private static final String SET_TARDIS_VARIABLE = "SET_TARDIS_VARIABLE";
 	
 	private EvalLogger evallogger;
 	private ComponentRegistry registry;
 	private FramController fram; 
 	private MSP430 cpu; 
 	private ResetManager resetManager;
+	private CapSimulator capacitor;
 	private double time;
 	
 	public PrintHandler() {}
@@ -32,10 +34,11 @@ public class PrintHandler {
 	public PrintHandler(ComponentRegistry registry, FramController fram) {
 		this.registry = registry;
 		this.fram = fram;
-		this.cpu = this.registry.getComponent(MSP430.class);
-		this.resetManager = new ResetManager(RESET_MEMORY_SIZE, MAX_OFF_MILLISEC, cpu);
-		this.resetManager.setFramController(fram);
+		this.cpu = registry.getComponent(MSP430.class);
+		this.capacitor = cpu.getCapSimulator();
+		this.resetManager = cpu.getResetManager();
 		this.time = 0.0;
+		
 	}
 	
 	/*
@@ -48,12 +51,13 @@ public class PrintHandler {
 	*/
 	
 	public PrintHandler(String name, ComponentRegistry registry, FramController fram) {
-		evallogger = EvalLogger.getInstance(name);
+		evallogger = EvalLogger.getInstance(name);	
 		this.fram = fram;
 		this.registry = registry;
-		this.cpu = this.registry.getComponent(MSP430.class);
-		this.resetManager = new ResetManager(RESET_MEMORY_SIZE, MAX_OFF_MILLISEC, cpu);
-		this.resetManager.setFramController(fram);
+		this.cpu = registry.getComponent(MSP430.class);
+		this.capacitor = cpu.getCapSimulator();
+		this.resetManager = cpu.getResetManager();
+		this.time = 0.0;
 	}
 
 	public void handleCommand (String fullcommand) {
@@ -91,8 +95,10 @@ public class PrintHandler {
 				} else {
 					resetManager.performReset();
 					resetManager.persistOffTime(Integer.parseInt(command[1].split(" ")[1]));
-
 				}
+				break;
+			case SET_TARDIS_VARIABLE:
+				resetManager.setMemoryLocation(Integer.parseInt(command[1].split(" ")[1]));
 				break;
 			case START_TIME:
 				this.time = cpu.getTimeMillis();
@@ -101,6 +107,10 @@ public class PrintHandler {
 				double end_time = cpu.getTimeMillis();
 				int delta_time = (int) ((end_time - time) * 1000);
 				fram.framWrite(Integer.parseInt(command[1].split(" ")[1]), delta_time, AccessMode.WORD20);
+				break;
+			case TEST_EXECUTION:
+				int microseconds = Integer.parseInt(command[1].split(" ")[1]);
+				capacitor.checkIfPowersOffDuringExecution(microseconds);
 				break;
 			default:
 				System.err.println("Command not recognized!");

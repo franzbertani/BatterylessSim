@@ -16,9 +16,18 @@ public class SimpleFairy {
     private Tuple next;
     private double maxTime;
 
+    
+    public SimpleFairy() {
+    	this.traceValues = new ArrayList<Tuple>();
+    }
+    
     public SimpleFairy(String tracePath){
         this.traceValues = new ArrayList<Tuple>();
-        String [] tupleValues = new String[2];
+        setupTraceFile(tracePath);
+    }
+    
+    public void setupTraceFile(String tracePath) {
+    	String [] tupleValues = new String[2];
         double offset = 0;
         boolean firstLine = true;
         

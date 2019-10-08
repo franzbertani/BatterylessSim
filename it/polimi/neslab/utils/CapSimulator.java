@@ -133,7 +133,7 @@ public class CapSimulator {
     			if(voltage <= vOff) { //MI SONO SPENTO
     				resetManager.performReset();
     				int offTime = getMicrosecToVOn();
-    				//resetManager.persistOffTime(memoryLocation, offTime);
+    				resetManager.persistOffTime(offTime);
     				System.out.println("offTime = " + offTime);	
     				return;
     			}

@@ -40,6 +40,8 @@ import se.sics.mspsim.core.EmulationLogger.WarningType;
 import se.sics.mspsim.util.ArrayUtils;
 import edu.clemson.time.RemanenceTimekeeper;
 import edu.umass.energy.Capacitor;
+import it.polimi.neslab.utils.CapSimulator;
+import it.polimi.neslab.utils.ResetManager;
 
 /**
  * @author Joakim Eriksson, SICS
@@ -65,7 +67,13 @@ public abstract class Chip extends Peripheral implements Loggable, EventSource {
   protected EmulationLogger logger;
   protected boolean DEBUG = false;
   protected Capacitor capacitor = null;
-  public double deathThreshold;
+  protected CapSimulator capSimulator = null;
+  protected ResetManager resetManager = null;
+  public ResetManager getResetManager() {
+	return resetManager;
+}
+
+public double deathThreshold;
   public double resurrectionThreshold;
   protected int logLevel;
   public RemanenceTimekeeper timekeeper;
@@ -182,6 +190,10 @@ public abstract class Chip extends Peripheral implements Loggable, EventSource {
 
   public Capacitor getCapacitor () {
       return this.capacitor;
+  }
+  
+  public CapSimulator getCapSimulator() {
+	  return this.capSimulator;
   }
 
   /* Called by subclasses to inform about changes of state */

@@ -43,6 +43,9 @@ import se.sics.mspsim.util.ArrayUtils;
 import se.sics.mspsim.util.ComponentRegistry;
 import se.sics.mspsim.util.MapTable;
 import edu.umass.energy.Capacitor;
+import it.polimi.neslab.utils.CapSimulator;
+import it.polimi.neslab.utils.ResetManager;
+import it.polimi.neslab.utils.SimpleFairy;
 
 public class MSP430 extends MSP430Core {
   
@@ -81,6 +84,17 @@ public class MSP430 extends MSP430Core {
             3.3 /* initial voltage, volts */,
             3.0 /* voltage divider factor */, // XXX WISPism
             2.5 /* voltage check reference voltage */); // XXX WISPism
+    
+    capSimulator = new CapSimulator(
+    		4.7e-5 /* capacitance, farads */,
+            3.3 /* initial voltage, volts */
+    		);
+     
+    resetManager = new ResetManager(10,10,this);
+    resetManager.setFramController(fram);
+    
+    capSimulator.setResetManager(resetManager);
+    capSimulator.setOnThreshold(3.3);
 
     // make the capacitor responsible for reads to voltageReaderAddress
     setIORange(Capacitor.voltageReaderAddress, 2, capacitor);
