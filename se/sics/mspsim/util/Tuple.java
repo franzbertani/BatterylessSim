@@ -27,7 +27,7 @@ public class Tuple {
 	}
 	
 	public String toString() {
-		return (new Double(x).toString() + " " + new Double(y).toString());
+		return (new Double(x).toString() + ";" + new Double(y).toString());
 	}
 
 }

@@ -50,6 +50,7 @@ public class SimpleFairy {
         current = iter.next();
         next = iter.next();
         this.maxTime = traceValues.get(traceValues.size() - 1).getX();
+        System.out.println(maxTime);
     }
 
     public double peekNextVoltage() {
@@ -60,8 +61,12 @@ public class SimpleFairy {
     	return current.getY();
     }
     
+    public double peekTime() {
+    	return current.getX();
+    }
+    
     public boolean hasEnded() {
-    	return iter.hasNext();
+    	return !iter.hasNext();
     }
 
     public void stepTrace() throws NoSuchElementException {

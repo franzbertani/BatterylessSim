@@ -89,6 +89,7 @@ public class MSP430 extends MSP430Core {
     		4.7e-5 /* capacitance, farads */,
             3.3 /* initial voltage, volts */
     		);
+    capSimulator.setFrequency(getDCOFrequency());
      
     resetManager = new ResetManager(10,10,this);
     resetManager.setFramController(fram);

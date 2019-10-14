@@ -2,6 +2,7 @@ package se.sics.mspsim.util;
 
 import edu.clemson.eval.EvalLogger;
 import it.polimi.neslab.utils.CapSimulator;
+import it.polimi.neslab.utils.EventLogger;
 import it.polimi.neslab.utils.ResetManager;
 import it.polimi.neslab.utils.SimpleFairy;
 import se.sics.mspsim.core.FramController;
@@ -21,6 +22,7 @@ public class PrintHandler {
 	private static final String SET_TARDIS_VARIABLE = "SET_TARDIS_VARIABLE";
 	
 	private EvalLogger evallogger;
+	private EventLogger eventLogger;
 	private ComponentRegistry registry;
 	private FramController fram; 
 	private MSP430 cpu; 
@@ -37,6 +39,8 @@ public class PrintHandler {
 		this.cpu = registry.getComponent(MSP430.class);
 		this.capacitor = cpu.getCapSimulator();
 		this.resetManager = cpu.getResetManager();
+		this.eventLogger = new EventLogger();
+		capacitor.setEventLogger(eventLogger);
 		this.time = 0.0;
 		
 	}
@@ -52,10 +56,12 @@ public class PrintHandler {
 	
 	public PrintHandler(String name, ComponentRegistry registry, FramController fram) {
 		evallogger = EvalLogger.getInstance(name);	
+		this.eventLogger = new EventLogger();
 		this.fram = fram;
 		this.registry = registry;
 		this.cpu = registry.getComponent(MSP430.class);
 		this.capacitor = cpu.getCapSimulator();
+		capacitor.setEventLogger(eventLogger);
 		this.resetManager = cpu.getResetManager();
 		this.time = 0.0;
 	}
@@ -109,8 +115,10 @@ public class PrintHandler {
 				fram.framWrite(Integer.parseInt(command[1].split(" ")[1]), delta_time, AccessMode.WORD20);
 				break;
 			case TEST_EXECUTION:
-				int microseconds = Integer.parseInt(command[1].split(" ")[1]);
-				capacitor.checkIfPowersOffDuringExecution(microseconds);
+				String[] input = command[1].split(",");
+				int microseconds = Integer.parseInt(input[0].split(" ")[1]);
+				String taskName = input.length==2 ? input[1] : "no name";
+				capacitor.checkIfPowersOffDuringExecution(microseconds, taskName);
 				break;
 			default:
 				System.err.println("Command not recognized!");
