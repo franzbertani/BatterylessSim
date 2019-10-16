@@ -19,7 +19,7 @@ public class CapSimulator {
     private double maxVoltage;
     private double onThreshold;
     private SimpleFairy energyFairy;
-    private int millisecFraction;
+	private int millisecFraction;
     private double vOff;
 	private ResetManager resetManager;
 	private int memoryLocation;
@@ -51,6 +51,10 @@ public class CapSimulator {
         this.energyFairy = ef;
         this.currentTraceTime = ef.peekTime();
     }
+    
+    public SimpleFairy getEnergyFairy() {
+		return energyFairy;
+	}
     
     public void setEventLogger(EventLogger ev) {
     	this.eventLogger = ev;

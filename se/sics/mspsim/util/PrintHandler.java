@@ -1,5 +1,9 @@
 package se.sics.mspsim.util;
 
+import java.sql.Time;
+import java.util.HashMap;
+import java.util.Map;
+
 import edu.clemson.eval.EvalLogger;
 import it.polimi.neslab.utils.CapSimulator;
 import it.polimi.neslab.utils.EventLogger;
@@ -20,6 +24,7 @@ public class PrintHandler {
 	private static final String GET_TIME = "GET_TIME";
 	private static final String TEST_EXECUTION = "TEST_EXECUTION";
 	private static final String SET_TARDIS_VARIABLE = "SET_TARDIS_VARIABLE";
+	private static final String SET_VON = "SET_VON";
 	
 	private EvalLogger evallogger;
 	private EventLogger eventLogger;
@@ -28,7 +33,7 @@ public class PrintHandler {
 	private MSP430 cpu; 
 	private ResetManager resetManager;
 	private CapSimulator capacitor;
-	private double time;
+	private Map<String, Integer> timersMap;
 	
 	public PrintHandler() {}
 	
@@ -41,7 +46,7 @@ public class PrintHandler {
 		this.resetManager = cpu.getResetManager();
 		this.eventLogger = new EventLogger();
 		capacitor.setEventLogger(eventLogger);
-		this.time = 0.0;
+		this.timersMap = new HashMap<>();
 		
 	}
 	
@@ -63,7 +68,8 @@ public class PrintHandler {
 		this.capacitor = cpu.getCapSimulator();
 		capacitor.setEventLogger(eventLogger);
 		this.resetManager = cpu.getResetManager();
-		this.time = 0.0;
+		this.timersMap = new HashMap<>();
+		
 	}
 
 	public void handleCommand (String fullcommand) {
@@ -107,18 +113,34 @@ public class PrintHandler {
 				resetManager.setMemoryLocation(Integer.parseInt(command[1].split(" ")[1]));
 				break;
 			case START_TIME:
-				this.time = cpu.getTimeMillis();
+				timersMap.put(command[1].trim(), (int) cpu.getTimeMillis());
 				break;
 			case GET_TIME:
 				double end_time = cpu.getTimeMillis();
-				int delta_time = (int) ((end_time - time) * 1000);
-				fram.framWrite(Integer.parseInt(command[1].split(" ")[1]), delta_time, AccessMode.WORD20);
+				String timerId = command[1].split("-")[0].trim();
+				System.err.println("Requested timer " + timerId);
+				System.err.println("Started at time " + timersMap.get(timerId));
+				int address = Integer.parseInt(command[1].split("-")[1].trim());
+				int deltaTime;
+				if(timersMap.containsKey(timerId)) {
+					deltaTime = (int) ((end_time - timersMap.get(timerId)) * 1000);
+				} else {
+					System.err.println("ERROR: requested unexistent timer '" + timerId + "' persisted 0");
+					deltaTime = 0;
+				}
+				fram.framWrite(address, deltaTime, AccessMode.WORD20);
 				break;
 			case TEST_EXECUTION:
 				String[] input = command[1].split(",");
 				int microseconds = Integer.parseInt(input[0].split(" ")[1]);
 				String taskName = input.length==2 ? input[1] : "no name";
 				capacitor.checkIfPowersOffDuringExecution(microseconds, taskName);
+				break;
+			case SET_VON:
+				double von = Integer.parseInt(command[1].split(" ")[1]) / 10.0;
+				System.err.println("Setting V On to " + von);
+				capacitor.setOnThreshold(von);
+				eventLogger.addLog(capacitor.getEnergyFairy().peekTime(), capacitor.getVoltage(), "Setting V On to " + von);
 				break;
 			default:
 				System.err.println("Command not recognized!");
