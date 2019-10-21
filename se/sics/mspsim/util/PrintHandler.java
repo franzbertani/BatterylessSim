@@ -25,6 +25,7 @@ public class PrintHandler {
 	private static final String TEST_EXECUTION = "TEST_EXECUTION";
 	private static final String SET_TARDIS_VARIABLE = "SET_TARDIS_VARIABLE";
 	private static final String SET_VON = "SET_VON";
+	private static final String LOG_EVENT = "LOG_EVENT";
 	
 	private EvalLogger evallogger;
 	private EventLogger eventLogger;
@@ -141,6 +142,10 @@ public class PrintHandler {
 				System.err.println("Setting V On to " + von);
 				capacitor.setOnThreshold(von);
 				eventLogger.addLog(capacitor.getEnergyFairy().peekTime(), capacitor.getVoltage(), "Setting V On to " + von);
+				break;
+			case LOG_EVENT:
+				String logValue = command[1];
+				eventLogger.addLog(capacitor.getEnergyFairy().peekTime(), capacitor.getVoltage(), logValue);
 				break;
 			default:
 				System.err.println("Command not recognized!");
