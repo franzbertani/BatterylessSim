@@ -158,8 +158,10 @@ public abstract class GenericNode extends Chip implements Runnable {
     }
     
     this.voltageTrace = config.getProperty("voltagetrace");
-    this.cpu.setVoltageTrace(voltageTrace);
-    this.cpu.getCapSimulator().setEnergyFairy(new SimpleFairy(voltageTrace));
+    if(voltageTrace != null) {
+	    this.cpu.setVoltageTrace(voltageTrace);
+	    this.cpu.getCapSimulator().setEnergyFairy(new SimpleFairy(voltageTrace));
+    }
 
 
     if (firmwareFile.endsWith("ihex")) {
