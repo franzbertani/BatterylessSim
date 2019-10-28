@@ -21,8 +21,11 @@ public class PrintHandler {
 	private static final String TEST_RESET = "TEST_RESET";
 	private static final String CHVAR = "CHVAR"; // set FRAM variable value.
 	private static final String START_TIME = "START_TIME";
+	private static final String START_CCOUNT = "START_CCOUNT";
 	private static final String GET_TIME = "GET_TIME";
-	private static final String TEST_EXECUTION = "TEST_EXECUTION";
+	private static final String GET_CCOUNT = "GET_CCOUNT";
+	private static final String TEST_EXECUTION_TIME = "TEST_EXECUTION_TIME";
+	private static final String TEST_EXECUTION_CCOUNT = "TEST_EXECUTION_CCOUNT";
 	private static final String SET_TARDIS_VARIABLE = "SET_TARDIS_VARIABLE";
 	private static final String SET_VON = "SET_VON";
 	private static final String LOG_EVENT = "LOG_EVENT";
@@ -35,6 +38,7 @@ public class PrintHandler {
 	private ResetManager resetManager;
 	private CapSimulator capacitor;
 	private Map<String, Integer> timersMap;
+	private Map<String, Long> cCountersMap;
 	
 	public PrintHandler() {}
 	
@@ -48,6 +52,7 @@ public class PrintHandler {
 		this.eventLogger = new EventLogger();
 		capacitor.setEventLogger(eventLogger);
 		this.timersMap = new HashMap<>();
+		this.cCountersMap = new HashMap<>(); 
 		
 	}
 	
@@ -70,11 +75,14 @@ public class PrintHandler {
 		capacitor.setEventLogger(eventLogger);
 		this.resetManager = cpu.getResetManager();
 		this.timersMap = new HashMap<>();
+		this.cCountersMap = new HashMap<>(); 
 		
 	}
 
 	public void handleCommand (String fullcommand) {
 		String [] command = fullcommand.split(":", 2);
+		String[] input;
+		String taskName;
 
 		switch (command[0]) { // Switch on the command (what comes before the semi-colon) 
 			case GRAPH_EVENT:
@@ -131,11 +139,35 @@ public class PrintHandler {
 				}
 				fram.framWrite(address, deltaTime, AccessMode.WORD20);
 				break;
-			case TEST_EXECUTION:
-				String[] input = command[1].split(",");
+			case TEST_EXECUTION_TIME:
+				input = command[1].split(",");
 				int microseconds = Integer.parseInt(input[0].split(" ")[1]);
-				String taskName = input.length==2 ? input[1] : "no name";
+				taskName = input.length==2 ? input[1] : "no name";
 				capacitor.checkIfPowersOffDuringExecution(microseconds, taskName);
+				break;
+			case START_CCOUNT:
+				cCountersMap.put(command[1].trim(), cpu.cpuCycles);
+				break;
+			case GET_CCOUNT:
+				String counterId = command[1].split("-")[0].trim();
+				System.err.println("Requested timer " + counterId);
+				int deltaCC;
+				long initialCC;
+				if(cCountersMap.containsKey(counterId)) {
+					initialCC = cCountersMap.get(counterId);		
+					deltaCC = (int) (cpu.cpuCycles - initialCC);
+					System.err.println("Start cc=" + initialCC + " final cc=" + cpu.cpuCycles + " delta cc=" + deltaCC);
+				} else {
+					System.err.println("ERROR: requested unexistent timer '" + counterId + "' persisted 0");
+					deltaCC = 0;
+				}
+				fram.framWrite(Integer.parseInt(command[1].split("-")[1].trim()), deltaCC, AccessMode.WORD20);
+				break;
+			case TEST_EXECUTION_CCOUNT:
+				input = command[1].split(",");
+				int cc = Integer.parseInt(input[0].split(" ")[1]);
+				taskName = input.length==2 ? input[1] : "no name";
+				capacitor.checkIfPowersOffDuringExecution(cc, taskName);
 				break;
 			case SET_VON:
 				double von = Integer.parseInt(command[1].split(" ")[1]) / 10.0;

@@ -217,6 +217,10 @@ public class CapSimulator {
     	System.out.println("No resets");
     }
     
+    public void checkIfPowersOffDuringExecution(int clockCycles, String name) {
+    	checkIfPowersOffDuringExecution(Math.ceil(((double)clockCycles / frequency) * 10000000), name);
+    }
+    
     
     public void setFrequency(int frequency) {
 		this.frequency = frequency;

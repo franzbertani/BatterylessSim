@@ -1151,6 +1151,9 @@ private static final int COVERAGE_BUFFER_MEM = 0x82000;
 		  main_start_called = true;
 	  } else if ("send_id".equals(function.getName())) {
 		  send_id_called = true;
+	  } else if ("siren_command".equals(function.getName())) {
+		  System.out.println("IN SIREN COMMAND");
+		  printf_called = true;
 	  }
 	  if(printf_called) printf_inner_function_calls++;                  
 
