@@ -61,6 +61,16 @@ public class ProfilerCommands implements CommandBundle {
   public void setupCommands(final ComponentRegistry registry, CommandHandler ch) {
     final MSP430 cpu = registry.getComponent(MSP430.class);
     if (cpu != null) {
+    	ch.registerCommand("totcc", new BasicCommand("show total CPU cycles", "") {
+    		public int executeCommand(CommandContext context) {
+    			System.err.println("TOTAL CPU CYCLES: " + cpu.cpuCycles);
+    			return 0;
+    		}
+    		
+    		
+    		
+    		
+    	});
       ch.registerCommand("profile", new BasicCommand("show profile information",
           "[-clear] [-sort column] [-showcallers] [regexp]") {
         public int executeCommand(final CommandContext context) {

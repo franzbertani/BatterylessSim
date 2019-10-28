@@ -1542,6 +1542,9 @@ private static final int COVERAGE_BUFFER_MEM = 0x82000;
 //            System.out.println("*** Writing $" + getAddressAsString(dst) + " to reg: " + dstData);
             dst &= 0xfffff;
             writeRegister(dstData, dst);
+            if(dst == pc - 4) {
+            	isStopping=true;
+            }
             updateStatus = false;
 	    cycles += 2;
             break;
