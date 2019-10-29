@@ -73,6 +73,7 @@ import se.sics.mspsim.util.ConfigManager;
 import se.sics.mspsim.util.ELF;
 import edu.clemson.eval.EvalLogger;
 import se.sics.mspsim.util.IHexReader;
+import se.sics.mspsim.util.MapEntry;
 import se.sics.mspsim.util.MapTable;
 import se.sics.mspsim.util.OperatingModeStatistics;
 import se.sics.mspsim.util.PluginRepository;
@@ -452,6 +453,12 @@ public abstract class GenericNode extends Chip implements Runnable {
     cpu.setMap(map);
     registry.registerComponent("elf", elf);
     registry.registerComponent("mapTable", map);
+    
+    for (MapEntry entry : map.getEntries("^*exit*")){
+    	System.err.println(entry.getName() + " " + entry.getAddress());
+    	
+    }
+    
     return elf;
   }
 

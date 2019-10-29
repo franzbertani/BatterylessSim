@@ -71,7 +71,7 @@ public class MSP430Core extends Chip implements MSP430Constants,
   protected static boolean simquick = false;
   protected double simtime = 0.0;
   
-  public static final int RETURN = 0x4130;
+  public static final int RETURN = 0x0110;
 
   public static final boolean debugInterrupts = false;
 
@@ -1135,6 +1135,28 @@ private static final int COVERAGE_BUFFER_MEM = 0x82000;
     servicedInterrupt = -1;
     servicedInterruptUnit = null;
   }  
+  
+  void checkIfExitCalled(int dst) {
+	  MapEntry function = map.getEntry(dst);
+	  if (function == null) {
+		  function = getFunction(map, dst);
+	  }
+	  
+	  if("exit".equals(function.getName())) {
+		  if(getSP() == map.stackStartAddress - 2 ) { // DIPENDE DALLA PLATFORM
+			  isStopping = true;
+		  System.err.println(function.getName() + " " + readRegister(PC) + " delta stack " + (getSP() - map.stackStartAddress));
+		  
+		  throw new StopExecutionException(readRegister(15),
+	              "MAIN END" + " after " +
+	              "R15=" + Utils.hex16(readRegister(15)) +
+	              "; PC=" + Utils.hex16(readRegister(PC)) +
+	              "; prev PC=" + Utils.hex16(getPreviousPC()) +
+	              "; SP=" + Utils.hex16(readRegister(SP)) +
+	              "; total cycles= " + cpuCycles);
+		 }
+	  }
+  }
 
   void checkIfIgnoredCall(int dst) {
 	  /* Is this a call to mspsim_printf? If it is we need to make sure no energy, or cycles are used for it
@@ -1543,7 +1565,7 @@ private static final int COVERAGE_BUFFER_MEM = 0x82000;
             dst &= 0xfffff;
             writeRegister(dstData, dst);
             if(dst == pc - 4) {
-            	isStopping=true;
+            	//isStopping=true;
             }
             updateStatus = false;
 	    cycles += 2;
@@ -1896,6 +1918,7 @@ private static final int COVERAGE_BUFFER_MEM = 0x82000;
               if (profiler != null) {
                   profileCall(dst, pc);
               }
+              
           }
       } else {
           // Address mode of destination...
@@ -2415,6 +2438,7 @@ private static final int COVERAGE_BUFFER_MEM = 0x82000;
               updateStatus = false;
 
               if (instruction == RETURN) {
+          
                   if (profiler != null) {
                       try {
                           profiler.profileReturn(cpuCycles);
@@ -2629,7 +2653,7 @@ private static final int COVERAGE_BUFFER_MEM = 0x82000;
       }
 
     previousPC = pcBefore;
-    
+    checkIfExitCalled(dst);
     /* return the address that was executed */
     return pcBefore;
   }
