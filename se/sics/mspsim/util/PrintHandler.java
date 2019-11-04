@@ -29,6 +29,7 @@ public class PrintHandler {
 	private static final String SET_TARDIS_VARIABLE = "SET_TARDIS_VARIABLE";
 	private static final String SET_VON = "SET_VON";
 	private static final String LOG_EVENT = "LOG_EVENT";
+	private static final String GET_FREQ = "GET_FREQ";
 	
 	private EvalLogger evallogger;
 	private EventLogger eventLogger;
@@ -101,18 +102,18 @@ public class PrintHandler {
 				System.out.println("printf: "+ command[1]);
 				break;
 			case RESET:
-				System.out.println("reset: "+ command[1]);
+				System.err.println("[RESET] reset: "+ command[1]);
 				resetManager.performReset();
 				break;
 			case CHVAR:
-				System.out.println("Set new value for variable");
+				System.err.println("[CHVAR] Set new value for variable");
 				fram.framWrite(Integer.parseInt(command[1].split(" ")[1]),  800, AccessMode.WORD20); //TODO implement 
 				break;
 			case TEST_RESET:
-				System.out.println("Test reset for current task");
+				System.err.println("[TEST_RESET] Test reset for current task");
 				int offTime = resetManager.computeOffTime();
 				if(offTime == 0) {
-					System.out.println("No resets for current task");
+					System.err.println("[TEST_RESET] No resets for current task");
 				} else {
 					resetManager.performReset();
 					resetManager.persistOffTime(Integer.parseInt(command[1].split(" ")[1]));
@@ -127,14 +128,13 @@ public class PrintHandler {
 			case GET_TIME:
 				double end_time = cpu.getTimeMillis();
 				String timerId = command[1].split("-")[0].trim();
-				System.err.println("Requested timer " + timerId);
-				System.err.println("Started at time " + timersMap.get(timerId));
+				System.err.println("[GET_TIME] Requested timer " + timerId + " --- started at time " + timersMap.get(timerId));
 				int address = Integer.parseInt(command[1].split("-")[1].trim());
 				int deltaTime;
 				if(timersMap.containsKey(timerId)) {
 					deltaTime = (int) ((end_time - timersMap.get(timerId)) * 1000);
 				} else {
-					System.err.println("ERROR: requested unexistent timer '" + timerId + "' persisted 0");
+					System.err.println("[GET_TIME] ERROR: requested unexistent timer '" + timerId + "' persisted 0");
 					deltaTime = 0;
 				}
 				fram.framWrite(address, deltaTime, AccessMode.WORD20);
@@ -150,15 +150,14 @@ public class PrintHandler {
 				break;
 			case GET_CCOUNT:
 				String counterId = command[1].split("-")[0].trim();
-				System.err.println("Requested timer " + counterId);
 				int deltaCC;
 				long initialCC;
 				if(cCountersMap.containsKey(counterId)) {
 					initialCC = cCountersMap.get(counterId);		
 					deltaCC = (int) (cpu.cpuCycles - initialCC);
-					System.err.println("Start cc=" + initialCC + " final cc=" + cpu.cpuCycles + " delta cc=" + deltaCC);
+					System.err.println("[GET_CCOUNT] Requested timer " + counterId + " --- start cc=" + initialCC + " final cc=" + cpu.cpuCycles + " delta cc=" + deltaCC);
 				} else {
-					System.err.println("ERROR: requested unexistent timer '" + counterId + "' persisted 0");
+					System.err.println("[GET_CCOUNT] ERROR: requested unexistent timer '" + counterId + "' persisted 0");
 					deltaCC = 0;
 				}
 				fram.framWrite(Integer.parseInt(command[1].split("-")[1].trim()), deltaCC, AccessMode.WORD20);
@@ -171,7 +170,7 @@ public class PrintHandler {
 				break;
 			case SET_VON:
 				double von = Integer.parseInt(command[1].split(" ")[1]) / 10.0;
-				System.err.println("Setting V On to " + von);
+				System.err.println("[SET_VON] Setting V On to " + von);
 				capacitor.setOnThreshold(von);
 				eventLogger.addLog(capacitor.getEnergyFairy().peekTime(), capacitor.getVoltage(), "Setting V On to " + von);
 				break;
@@ -179,8 +178,11 @@ public class PrintHandler {
 				String logValue = command[1];
 				eventLogger.addLog(capacitor.getEnergyFairy().peekTime(), capacitor.getVoltage(), logValue);
 				break;
+			case GET_FREQ:
+				fram.framWrite(Integer.parseInt(command[1].split(" ")[1]),  cpu.dcoFrq, AccessMode.WORD20);
+				break;
 			default:
-				System.err.println("Command not recognized!");
+				System.err.println("[!!!] Command not recognized!");
 				System.out.println(fullcommand);
 		}
 	}

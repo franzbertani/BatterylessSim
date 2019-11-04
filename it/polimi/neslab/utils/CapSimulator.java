@@ -165,7 +165,7 @@ public class CapSimulator {
 		double spentEnergy;
 		int iteration = 0;
 		
-		System.out.println("Testin execution of " + taskName + " for "+microseconds+" microseconds, with trace at "+energyFairy.peekTime()+" milliseconds");
+		System.err.println("[CAP] Testin execution of " + taskName + " for "+microseconds+" microseconds, with trace at "+energyFairy.peekTime()+" milliseconds");
 		
     	while (timeLeft >= 0) {
     		/*
@@ -181,9 +181,9 @@ public class CapSimulator {
     			if(!energyFairy.hasEnded()) {
     				energyFairy.stepTrace();
     			} else {
-    				System.err.println("V trace ended");
+    				System.err.println("[CAP] V trace ended");
     				writeLogToCsv();
-    				resetManager.stopExecution("V trace ended", lifecycles); //THIS EXITS THE SIMULATION AND STOPS EVERTYTHING
+    				resetManager.stopExecution("[CAP] V trace ended", lifecycles); //THIS EXITS THE SIMULATION AND STOPS EVERTYTHING
     			}
     			
     			vSupply = energyFairy.peekVoltage();
@@ -202,7 +202,8 @@ public class CapSimulator {
     				int offTime = getMicrosecToVOn();
     				eventLogger.addLog(energyFairy.peekTime(), voltage, "On");
     				resetManager.persistOffTime(offTime);
-    				System.out.println("Power failure at trace time = " +energyFairy.peekTime() +   " milliseconds, reset after offTime = " + offTime + " microseconds");
+    				System.err.println("[CAP] Power failure at trace time = " +energyFairy.peekTime() +   " milliseconds, reset after offTime = " + offTime + " microseconds");
+    				resetManager.performReset();
     				return;
     			}
     			
@@ -214,11 +215,11 @@ public class CapSimulator {
     		timeLeft -= 1;
     	}
     	
-    	System.out.println("No resets");
+    	System.err.println("[CAP] No resets while running " + taskName);
     }
     
     public void checkIfPowersOffDuringExecution(int clockCycles, String name) {
-    	checkIfPowersOffDuringExecution(Math.ceil(((double)clockCycles / frequency) * 10000000), name);
+    	checkIfPowersOffDuringExecution(Math.ceil(((double)clockCycles / frequency) * 1000000), name);
     }
     
     

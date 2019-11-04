@@ -179,8 +179,8 @@ public class MSP430Core extends Chip implements MSP430Constants,
   private boolean isFlash;
 
 /* start non-invasive mspsim_printf code */ 
-private boolean printf_called = false;
-private int printf_inner_function_calls = 0;
+public boolean printf_called = false;
+public int printf_inner_function_calls = 0;
 private static final int PRINTF_BUFFER_MEM = 0x80000;
 String serialText = "";
 public String ekhofilename;
@@ -1174,7 +1174,6 @@ private static final int COVERAGE_BUFFER_MEM = 0x82000;
 	  } else if ("send_id".equals(function.getName())) {
 		  send_id_called = true;
 	  } else if ("siren_command".equals(function.getName())) {
-		  System.out.println("IN SIREN COMMAND");
 		  printf_called = true;
 	  }
 	  if(printf_called) printf_inner_function_calls++;                  

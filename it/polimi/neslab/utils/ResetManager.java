@@ -50,6 +50,8 @@ public class ResetManager implements MSP430Constants{
     }
     
     public void performReset() {
+    	cpu.printf_called = false;
+		cpu.printf_inner_function_calls = 0;
     	cpu.reset();
     }
     
@@ -73,6 +75,8 @@ public class ResetManager implements MSP430Constants{
     }
 
 	public void stopExecution(String reason, int lifecycles) {
+		cpu.printf_called = false;
+		cpu.printf_inner_function_calls = 0;
 		throw new StopExecutionException(cpu.readRegister(15),
 	              reason + " after " +
 	              lifecycles + " lifecycles; " +
