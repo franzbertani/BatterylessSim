@@ -1,0 +1,16 @@
+Using FRAM
+Capacitor.setPowerMode OFF
+Capacity = 4.7E-5
+Set voltage reader to <edu.umass.energy.Capacitor, C=4.7E-5F>
+__crt0_call_exit 17574
+_exit 19178
+exit 19178
+MSPSim>Autoloading script: scripts/simple.sc
+Debug is set to false
+cpuloop() called
+-----------------------------------------------
+MSPSim 0.99 starting firmware: firmware/exp6989/main.out
+-----------------------------------------------
+MSPSim>printf:  ciao
+Caught write to Timer @ 0352, data=1000, word=true, cycles=1688
+Capacitor.setPowerMode LPM3

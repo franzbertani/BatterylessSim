@@ -2,6 +2,7 @@ package se.sics.mspsim.util;
 
 import java.sql.Time;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
 
 import edu.clemson.eval.EvalLogger;
@@ -17,6 +18,7 @@ public class PrintHandler {
 
 	private static final String GRAPH_EVENT = "GRAPH-EVENT";
 	private static final String PRINT = "PRINTF";
+	private static final String PRINTFLONG = "PRINTFLONG";
 	private static final String RESET = "RESET";
 	private static final String TEST_RESET = "TEST_RESET";
 	private static final String CHVAR = "CHVAR"; // set FRAM variable value.
@@ -30,6 +32,10 @@ public class PrintHandler {
 	private static final String SET_VON = "SET_VON";
 	private static final String LOG_EVENT = "LOG_EVENT";
 	private static final String GET_FREQ = "GET_FREQ";
+	private static final String GET_CURRENT_CLOCK = "GET_CURRENT_CLOCK";
+	private static final String GET_CAP_VOLTAGE = "GET_CAP_VOLTAGE";
+	private static final String SLEEP_FOR_TIME = "SLEEP_FOR_TIME";
+	private static final String INCREASE_THRESHOLD = "INCREASE_THRESHOLD";
 	
 	private EvalLogger evallogger;
 	private EventLogger eventLogger;
@@ -40,6 +46,8 @@ public class PrintHandler {
 	private CapSimulator capacitor;
 	private Map<String, Integer> timersMap;
 	private Map<String, Long> cCountersMap;
+	private boolean isSenseEnabled;
+	private static int senseMillis = 20;
 	
 	public PrintHandler() {}
 	
@@ -53,7 +61,8 @@ public class PrintHandler {
 		this.eventLogger = new EventLogger();
 		capacitor.setEventLogger(eventLogger);
 		this.timersMap = new HashMap<>();
-		this.cCountersMap = new HashMap<>(); 
+		this.cCountersMap = new HashMap<>();
+		this.isSenseEnabled = true;
 		
 	}
 	
@@ -77,6 +86,7 @@ public class PrintHandler {
 		this.resetManager = cpu.getResetManager();
 		this.timersMap = new HashMap<>();
 		this.cCountersMap = new HashMap<>(); 
+		this.isSenseEnabled = true;
 		
 	}
 
@@ -99,8 +109,14 @@ public class PrintHandler {
 				}
 				break;
 			case PRINT:
-				System.out.println("printf: "+ command[1]);
+				System.out.println(cpu.getTime() + " printf: "+ command[1]);
 				break;
+			case PRINTFLONG:
+				String[] parts = command[1].split("-");
+				String[] values = parts[1].split(";");
+				System.out.println(values[0] + " " + values[1]);
+				double value = Integer.parseInt(values[0].trim()) + Integer.parseInt(values[1].trim())*(Math.pow(2, 16));
+				System.out.println("printf: " + parts[0] + " " + value);
 			case RESET:
 				System.err.println("[RESET] reset: "+ command[1]);
 				resetManager.performReset();
@@ -124,26 +140,38 @@ public class PrintHandler {
 				break;
 			case START_TIME:
 				timersMap.put(command[1].trim(), (int) cpu.getTimeMillis());
+				if(command[1].trim().equals("misd(SENSE)"))
+					this.isSenseEnabled=false;
 				break;
 			case GET_TIME:
 				double end_time = cpu.getTimeMillis();
 				String timerId = command[1].split("-")[0].trim();
-				System.err.println("[GET_TIME] Requested timer " + timerId + " --- started at time " + timersMap.get(timerId));
 				int address = Integer.parseInt(command[1].split("-")[1].trim());
 				int deltaTime;
 				if(timersMap.containsKey(timerId)) {
 					deltaTime = (int) ((end_time - timersMap.get(timerId)) * 1000);
+					if(timerId.equals("misd(SENSE)")) {
+						if(!this.isSenseEnabled)
+							this.isSenseEnabled = (end_time - timersMap.get(timerId)) > this.senseMillis; //20Hz
+					} else
+						System.err.println("[GET_TIME] Requested timer " + timerId + " --- started at time " + timersMap.get(timerId) * 1000 + " delta " + deltaTime);
 				} else {
 					System.err.println("[GET_TIME] ERROR: requested unexistent timer '" + timerId + "' persisted 0");
 					deltaTime = 0;
 				}
-				fram.framWrite(address, deltaTime, AccessMode.WORD20);
+				if(timerId.equals("misd(SENSE)")) {
+					fram.framWrite(address, isSenseEnabled ? 1 : 0, AccessMode.WORD20);
+				} else
+					fram.framWrite(address, deltaTime, AccessMode.WORD20);
 				break;
 			case TEST_EXECUTION_TIME:
 				input = command[1].split(",");
 				int microseconds = Integer.parseInt(input[0].split(" ")[1]);
 				taskName = input.length==2 ? input[1] : "no name";
-				capacitor.checkIfPowersOffDuringExecution(microseconds, taskName);
+				int time = capacitor.checkIfPowersOffDuringExecution(microseconds, taskName);
+				if(time>50000) {
+					this.isSenseEnabled = true;
+				}
 				break;
 			case START_CCOUNT:
 				cCountersMap.put(command[1].trim(), cpu.cpuCycles);
@@ -166,13 +194,23 @@ public class PrintHandler {
 				input = command[1].split(",");
 				int cc = Integer.parseInt(input[0].split(" ")[1]);
 				taskName = input.length==2 ? input[1] : "no name";
-				capacitor.checkIfPowersOffDuringExecution(cc, taskName);
+				int offT = capacitor.checkIfPowersOffDuringExecution(cc, taskName);
+				if(offT>50000) {
+					this.isSenseEnabled = true;
+				}
 				break;
 			case SET_VON:
-				double von = Integer.parseInt(command[1].split(" ")[1]) / 10.0;
+				double energy = Integer.parseInt(command[1].split(" ")[1]) * 1e-6;
+				double deltaV = Math.sqrt(2*energy/capacitor.getCapacitance());
+				double von = Math.round((capacitor.getvOff() + deltaV)*100.0)/100.0;
 				System.err.println("[SET_VON] Setting V On to " + von);
-				capacitor.setOnThreshold(von);
-				eventLogger.addLog(capacitor.getEnergyFairy().peekTime(), capacitor.getVoltage(), "Setting V On to " + von);
+				capacitor.setOnThreshold(Math.min(von,5));
+				eventLogger.addLog(capacitor.getEnergyFairy().peekTime(), capacitor.getVoltage(), "VOn= " + von);
+				break;
+			case INCREASE_THRESHOLD:
+				capacitor.setOnThreshold(Math.min(capacitor.getOnThreshold()+0.2, 5));
+				System.err.println("[INCREASE_THRESHOLD] Setting V On to " + (capacitor.getOnThreshold()+0.2));
+				eventLogger.addLog(capacitor.getEnergyFairy().peekTime(), capacitor.getVoltage(), "VOn= " + capacitor.getOnThreshold());
 				break;
 			case LOG_EVENT:
 				String logValue = command[1];
@@ -180,6 +218,19 @@ public class PrintHandler {
 				break;
 			case GET_FREQ:
 				fram.framWrite(Integer.parseInt(command[1].split(" ")[1]),  cpu.dcoFrq, AccessMode.WORD20);
+				break;
+			case GET_CAP_VOLTAGE:
+				float voltage = (int) ((Math.round(capacitor.getVoltage()*100.0)/100.0));
+				System.err.println("[GET_CAP_VOLTAGE] Current cap voltage " + voltage + "V");
+				int availableVoltage = (int) ((voltage - capacitor.getvOff()) * 100); 
+				fram.framWrite(Integer.parseInt(command[1].split(" ")[1]),  availableVoltage, AccessMode.WORD); 
+				break;
+			case SLEEP_FOR_TIME:
+				input = command[1].split(",");
+				int sleepTime = Integer.parseInt(input[0].split(" ")[1]);
+				capacitor.setLPM();
+				capacitor.checkIfPowersOffDuringExecution((double)sleepTime, "sleep");
+				capacitor.setActiveMode();
 				break;
 			default:
 				System.err.println("[!!!] Command not recognized!");

@@ -59,7 +59,7 @@ public class ResetManager implements MSP430Constants{
     	if(fram == null) {
     		throw new UnsupportedOperationException("No fram controller, set it first.");
     	}
-		fram.framWrite(memoryLocation,  memory.getNewest()*1000, AccessMode.WORD20);    	
+		fram.framWrite(memoryLocation,  value, AccessMode.WORD20);    	
     }
     
     public void persistOffTime(int memoryLocation, int value) {

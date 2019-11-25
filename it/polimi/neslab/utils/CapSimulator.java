@@ -17,10 +17,23 @@ public class CapSimulator {
     private double capacitance;
     private double voltage;
     private double maxVoltage;
-    private double onThreshold;
+    public double getMaxVoltage() {
+		return maxVoltage;
+	}
+
+	public void setMaxVoltage(double maxVoltage) {
+		this.maxVoltage = maxVoltage;
+	}
+
+	public double getCapacitance() {
+		return capacitance;
+	}
+
+	private double onThreshold;
     private SimpleFairy energyFairy;
 	private int millisecFraction;
     private double vOff;
+    private double vMax;
 	private ResetManager resetManager;
 	private int memoryLocation;
 	private long timeSpan;
@@ -32,18 +45,29 @@ public class CapSimulator {
 	private ArrayList<Tuple> logValues;
     private static final double R_ESR = 30000;
     private EventLogger eventLogger;
-
+    private static final int ACTIVE = 1;
+    private static final int LPM = 2;
+    private static final int OFF = 0;
+    private int mode;
+    
     public CapSimulator (double capacitance, double initVoltage){
         this.capacitance = capacitance;
         this.voltage = initVoltage;
         this.millisecFraction = 0;
-        this.vOff = 1.8;
+        this.vOff = 1.88;
+        this.vMax = 5;
         this.lifecycles = 0;
         this.timeSpan = 0;
         this.logValues = new ArrayList<Tuple>();
+        System.err.println("Capacity = " + capacitance);
+        this.mode = ACTIVE;
     }
     
-    public void setMemoryLocation (int memoryLocation) {
+    public double getvOff() {
+		return vOff;
+	}
+
+	public void setMemoryLocation (int memoryLocation) {
     	this.memoryLocation = memoryLocation;
     }
 
@@ -72,6 +96,10 @@ public class CapSimulator {
         return (4010.6 * voltage) + 803.53;
     }
     
+    private double resistanceLPM() {
+    	return (18232 * voltage) + 1017.9;
+    }
+    
     private double resistanceOff() {
     	// Resistance is only the comparator, so voltage / 1.5uA
     	return voltage / 0.0000015;
@@ -79,7 +107,11 @@ public class CapSimulator {
     
     private void consumeEnergyAndUpdateV(double energy) {
     	double newEnergy = (0.5*capacitance*voltage*voltage) - energy;
-    	updateVoltage(Math.max(Math.sqrt(2*newEnergy/capacitance), energyFairy.peekVoltage()));
+    	updateVoltage(
+    			Math.max(
+    					Math.sqrt(2*newEnergy/capacitance), 
+    					energyFairy.peekVoltage())
+    			);
     }
     
     private double getOffEnergy() {
@@ -90,11 +122,19 @@ public class CapSimulator {
     
     private void updateVoltage( double voltage ) {
     	//System.out.println("Updating voltage at trace time " + currentTraceTime);
-    	this.voltage = voltage;
+    	this.voltage = Math.min(this.vMax,voltage);
     	if(currentTraceTime != energyFairy.peekTime()) {
     		currentTraceTime = energyFairy.peekTime();
     		logValues.add(new Tuple(energyFairy.peekTime(), this.voltage));
     	}
+    }
+    
+    public void setActiveMode() {
+    	this.mode = ACTIVE;
+    }
+    
+    public void setLPM() {
+    	this.mode = LPM;
     }
     
     private int getMicrosecToVOn() {
@@ -104,7 +144,7 @@ public class CapSimulator {
     	double resistance;
     	int iteration = 0;
     	lifecycles++;
-    	while (voltage <= onThreshold) {
+    	while (voltage < onThreshold) {
     		if(vSupply < voltage) {
     			
     			resistance = resistanceOff();
@@ -132,7 +172,7 @@ public class CapSimulator {
     
     private void writeLogToCsv() {
     	try {
-			PrintWriter wr = new PrintWriter(new File("/Users/francesco/git/scheduler/pydef/outputlog.csv"));
+			PrintWriter wr = new PrintWriter(new File("/Users/francesco/git/scheduler/datiScheduler/capacitorTrace.csv"));
 			ListIterator<Tuple> iter = logValues.listIterator();
 			System.out.println("SIZE: "+ logValues.size());
 	    	while(iter.hasNext()) {
@@ -144,7 +184,7 @@ public class CapSimulator {
 			e.printStackTrace();
 		}
     	try {
-			PrintWriter wr = new PrintWriter(new File("/Users/francesco/git/scheduler/pydef/eventLogger.csv"));
+			PrintWriter wr = new PrintWriter(new File("/Users/francesco/git/scheduler/datiScheduler/eventsLog.csv"));
 			ListIterator<CaptionedTuple> iter = eventLogger.getLog().listIterator();
 	    	while(iter.hasNext()) {
 	    		wr.println(iter.next().toString());
@@ -157,7 +197,7 @@ public class CapSimulator {
     	
     }
     
-    public void checkIfPowersOffDuringExecution (double microseconds, String taskName) {
+    public int checkIfPowersOffDuringExecution (double microseconds, String taskName) {
     	double vSupply = energyFairy.peekVoltage();
 		double timeLeft = microseconds;
 		double resistance;
@@ -188,8 +228,18 @@ public class CapSimulator {
     			
     			vSupply = energyFairy.peekVoltage();
     		}
-
-    		resistance = resistanceActive();
+    		
+    		switch(this.mode) {
+    		case ACTIVE:
+    			resistance = resistanceActive();
+    			break;
+    		case LPM:
+    			resistance = resistanceLPM();
+    			break;
+    		default:
+    			resistance = resistanceActive();
+    				
+    		}
 
     		if(vSupply < voltage) { // MI STO SCARICANDO
     			execCC = (int) Math.floor(1e-6 * frequency);
@@ -204,7 +254,7 @@ public class CapSimulator {
     				resetManager.persistOffTime(offTime);
     				System.err.println("[CAP] Power failure at trace time = " +energyFairy.peekTime() +   " milliseconds, reset after offTime = " + offTime + " microseconds");
     				resetManager.performReset();
-    				return;
+    				return offTime;
     			}
     			
     		} else { // MI STO CARICANDO
@@ -216,10 +266,15 @@ public class CapSimulator {
     	}
     	
     	System.err.println("[CAP] No resets while running " + taskName);
+    	return 0;
     }
     
-    public void checkIfPowersOffDuringExecution(int clockCycles, String name) {
-    	checkIfPowersOffDuringExecution(Math.ceil(((double)clockCycles / frequency) * 1000000), name);
+    public double getOnThreshold() {
+		return onThreshold;
+	}
+
+	public int checkIfPowersOffDuringExecution(int clockCycles, String name) {
+    	return checkIfPowersOffDuringExecution(Math.ceil(((double)clockCycles / frequency) * 1000000), name);
     }
     
     
