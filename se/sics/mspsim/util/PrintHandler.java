@@ -47,7 +47,9 @@ public class PrintHandler {
 	private Map<String, Integer> timersMap;
 	private Map<String, Long> cCountersMap;
 	private boolean isSenseEnabled;
+	private boolean isTempEnabled;
 	private static int senseMillis = 20;
+	private static int tempMillis = 100;
 	
 	public PrintHandler() {}
 	
@@ -63,6 +65,7 @@ public class PrintHandler {
 		this.timersMap = new HashMap<>();
 		this.cCountersMap = new HashMap<>();
 		this.isSenseEnabled = true;
+		this.isTempEnabled = true;
 		
 	}
 	
@@ -87,6 +90,7 @@ public class PrintHandler {
 		this.timersMap = new HashMap<>();
 		this.cCountersMap = new HashMap<>(); 
 		this.isSenseEnabled = true;
+		this.isTempEnabled = true;
 		
 	}
 
@@ -142,6 +146,8 @@ public class PrintHandler {
 				timersMap.put(command[1].trim(), (int) cpu.getTimeMillis());
 				if(command[1].trim().equals("misd(SENSE)"))
 					this.isSenseEnabled=false;
+				if(command[1].trim().equals("misd(TEMP)"))
+					this.isTempEnabled=false;
 				break;
 			case GET_TIME:
 				double end_time = cpu.getTimeMillis();
@@ -152,8 +158,11 @@ public class PrintHandler {
 					deltaTime = (int) ((end_time - timersMap.get(timerId)) * 1000);
 					if(timerId.equals("misd(SENSE)")) {
 						if(!this.isSenseEnabled)
-							this.isSenseEnabled = (end_time - timersMap.get(timerId)) > this.senseMillis; //20Hz
-					} else
+							this.isSenseEnabled = (end_time - timersMap.get(timerId)) > this.senseMillis; //50Hz
+					} else if(timerId.equals("misd(TEMP)")) {
+						if(!this.isTempEnabled)
+							this.isTempEnabled = (end_time - timersMap.get(timerId)) > this.tempMillis; //2Hz
+					}else
 						System.err.println("[GET_TIME] Requested timer " + timerId + " --- started at time " + timersMap.get(timerId) * 1000 + " delta " + deltaTime);
 				} else {
 					System.err.println("[GET_TIME] ERROR: requested unexistent timer '" + timerId + "' persisted 0");
@@ -161,6 +170,8 @@ public class PrintHandler {
 				}
 				if(timerId.equals("misd(SENSE)")) {
 					fram.framWrite(address, isSenseEnabled ? 1 : 0, AccessMode.WORD20);
+				} else if(timerId.equals("misd(TEMP)")) {
+					fram.framWrite(address, isTempEnabled ? 1 : 0, AccessMode.WORD20);
 				} else
 					fram.framWrite(address, deltaTime, AccessMode.WORD20);
 				break;
@@ -169,8 +180,11 @@ public class PrintHandler {
 				int microseconds = Integer.parseInt(input[0].split(" ")[1]);
 				taskName = input.length==2 ? input[1] : "no name";
 				int time = capacitor.checkIfPowersOffDuringExecution(microseconds, taskName);
-				if(time>50000) {
+				if(time>20000) {
 					this.isSenseEnabled = true;
+				}
+				if(time>100000) {
+					this.isTempEnabled = true;
 				}
 				break;
 			case START_CCOUNT:
@@ -195,8 +209,11 @@ public class PrintHandler {
 				int cc = Integer.parseInt(input[0].split(" ")[1]);
 				taskName = input.length==2 ? input[1] : "no name";
 				int offT = capacitor.checkIfPowersOffDuringExecution(cc, taskName);
-				if(offT>50000) {
+				if(offT>20000) {
 					this.isSenseEnabled = true;
+				}
+				if(offT>100000) {
+					this.isTempEnabled = true;
 				}
 				break;
 			case SET_VON:
